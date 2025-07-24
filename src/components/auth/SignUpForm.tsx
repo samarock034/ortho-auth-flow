@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator
+} from 'react-native';
+import { useForm, Controller } from 'react-hook-form';
+import { Eye, EyeOff, User, Mail, Lock } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface SignUpFormData {
   name: string;
@@ -22,211 +30,421 @@ interface SignUpFormProps {
 export const SignUpForm: React.FC<SignUpFormProps> = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<SignUpFormData>();
+  const { control, handleSubmit, watch, formState: { errors } } = useForm<SignUpFormData>();
   const password = watch('password');
 
   const onSubmit = async (data: SignUpFormData) => {
+    if (!acceptTerms) {
+      return;
+    }
     setIsLoading(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Sign up data:', data);
+    console.log('Sign up data:', { ...data, acceptTerms });
     setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-auth-gradient-start to-auth-gradient-end p-4 flex items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 animate-fade-in">
-        {/* Logo placeholder */}
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 mx-auto bg-white rounded-2xl flex items-center justify-center shadow-lg">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <div className="w-4 h-4 bg-white rounded-full"></div>
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-white">Join us today!</h1>
-          <p className="text-white/80">Create your account to get started</p>
-        </div>
+    <LinearGradient
+      colors={['#4F8EF7', '#7DD3C0']}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            {/* Logo */}
+            <View style={styles.logoContainer}>
+              <View style={styles.logo}>
+                <View style={styles.logoInner} />
+              </View>
+              <Text style={styles.title}>Join us today!</Text>
+              <Text style={styles.subtitle}>Create your account to get started</Text>
+            </View>
 
-        <Card className="border-0 shadow-xl bg-auth-surface backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <h2 className="text-xl font-semibold text-center">Sign Up</h2>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">
-                  Full Name
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    className="pl-10 h-12 rounded-xl border-2 focus:border-primary transition-all duration-300"
-                    {...register('name', { 
+            {/* Form Card */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Sign Up</Text>
+              
+              {/* Name Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Full Name</Text>
+                <View style={styles.inputWrapper}>
+                  <User size={20} color="#6B7280" style={styles.inputIcon} />
+                  <Controller
+                    control={control}
+                    name="name"
+                    rules={{
                       required: 'Full name is required',
                       minLength: { value: 2, message: 'Name must be at least 2 characters' }
-                    })}
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="Enter your full name"
+                        placeholderTextColor="#9CA3AF"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        autoCapitalize="words"
+                      />
+                    )}
                   />
-                  <User className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                </div>
+                </View>
                 {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                  <Text style={styles.errorText}>{errors.name.message}</Text>
                 )}
-              </div>
+              </View>
 
-              <div className="space-y-2">
-                <Label htmlFor="emailOrPhone" className="text-sm font-medium">
-                  Email or Phone
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="emailOrPhone"
-                    type="text"
-                    placeholder="Enter your email or phone"
-                    className="pl-10 h-12 rounded-xl border-2 focus:border-primary transition-all duration-300"
-                    {...register('emailOrPhone', { 
+              {/* Email/Phone Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email or Phone</Text>
+                <View style={styles.inputWrapper}>
+                  <Mail size={20} color="#6B7280" style={styles.inputIcon} />
+                  <Controller
+                    control={control}
+                    name="emailOrPhone"
+                    rules={{
                       required: 'Email or phone is required',
                       pattern: {
                         value: /^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|[\+]?[1-9][\d]{10,14})$/,
                         message: 'Enter a valid email or phone number'
                       }
-                    })}
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="Enter your email or phone"
+                        placeholderTextColor="#9CA3AF"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                      />
+                    )}
                   />
-                  <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                </div>
+                </View>
                 {errors.emailOrPhone && (
-                  <p className="text-sm text-destructive">{errors.emailOrPhone.message}</p>
+                  <Text style={styles.errorText}>{errors.emailOrPhone.message}</Text>
                 )}
-              </div>
+              </View>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a password"
-                    className="pl-10 pr-10 h-12 rounded-xl border-2 focus:border-primary transition-all duration-300"
-                    {...register('password', { 
+              {/* Password Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.inputWrapper}>
+                  <Lock size={20} color="#6B7280" style={styles.inputIcon} />
+                  <Controller
+                    control={control}
+                    name="password"
+                    rules={{
                       required: 'Password is required',
                       minLength: { value: 8, message: 'Password must be at least 8 characters' },
                       pattern: {
                         value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
                         message: 'Password must contain uppercase, lowercase, and number'
                       }
-                    })}
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        style={[styles.textInput, { paddingRight: 50 }]}
+                        placeholder="Create a password"
+                        placeholderTextColor="#9CA3AF"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        secureTextEntry={!showPassword}
+                      />
+                    )}
                   />
-                  <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1 h-10 w-10 p-0 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <EyeOff size={20} color="#6B7280" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <Eye size={20} color="#6B7280" />
                     )}
-                  </Button>
-                </div>
+                  </TouchableOpacity>
+                </View>
                 {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                  <Text style={styles.errorText}>{errors.password.message}</Text>
                 )}
-              </div>
+              </View>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium">
-                  Confirm Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirm your password"
-                    className="pl-10 pr-10 h-12 rounded-xl border-2 focus:border-primary transition-all duration-300"
-                    {...register('confirmPassword', { 
+              {/* Confirm Password Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Confirm Password</Text>
+                <View style={styles.inputWrapper}>
+                  <Lock size={20} color="#6B7280" style={styles.inputIcon} />
+                  <Controller
+                    control={control}
+                    name="confirmPassword"
+                    rules={{
                       required: 'Please confirm your password',
                       validate: value => value === password || 'Passwords do not match'
-                    })}
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        style={[styles.textInput, { paddingRight: 50 }]}
+                        placeholder="Confirm your password"
+                        placeholderTextColor="#9CA3AF"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        secureTextEntry={!showConfirmPassword}
+                      />
+                    )}
                   />
-                  <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1 h-10 w-10 p-0 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <EyeOff size={20} color="#6B7280" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <Eye size={20} color="#6B7280" />
                     )}
-                  </Button>
-                </div>
+                  </TouchableOpacity>
+                </View>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                  <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>
                 )}
-              </div>
+              </View>
 
-              <div className="flex items-start space-x-3 pt-2">
-                <Checkbox
-                  id="acceptTerms"
-                  className="mt-1"
-                  {...register('acceptTerms', { 
-                    required: 'You must accept the terms and conditions' 
-                  })}
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="acceptTerms" className="text-sm leading-none cursor-pointer">
-                    I agree to the{' '}
-                    <Button variant="link" className="p-0 h-auto text-primary underline">
-                      Terms & Conditions
-                    </Button>{' '}
-                    and{' '}
-                    <Button variant="link" className="p-0 h-auto text-primary underline">
-                      Privacy Policy
-                    </Button>
-                  </Label>
-                  {errors.acceptTerms && (
-                    <p className="text-sm text-destructive">{errors.acceptTerms.message}</p>
+              {/* Terms Checkbox */}
+              <View style={styles.termsContainer}>
+                <TouchableOpacity
+                  style={[styles.checkbox, acceptTerms && styles.checkboxChecked]}
+                  onPress={() => setAcceptTerms(!acceptTerms)}
+                >
+                  {acceptTerms && <Text style={styles.checkmark}>✓</Text>}
+                </TouchableOpacity>
+                <View style={styles.termsTextContainer}>
+                  <Text style={styles.termsText}>I agree to the </Text>
+                  <TouchableOpacity>
+                    <Text style={styles.termsLink}>Terms & Conditions</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.termsText}> and </Text>
+                  <TouchableOpacity>
+                    <Text style={styles.termsLink}>Privacy Policy</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              {!acceptTerms && (
+                <Text style={styles.errorText}>You must accept the terms and conditions</Text>
+              )}
+
+              {/* Sign Up Button */}
+              <TouchableOpacity
+                style={[styles.signUpButton, (!acceptTerms || isLoading) && styles.buttonDisabled]}
+                onPress={handleSubmit(onSubmit)}
+                disabled={!acceptTerms || isLoading}
+              >
+                <LinearGradient
+                  colors={!acceptTerms || isLoading ? ['#9CA3AF', '#9CA3AF'] : ['#4F8EF7', '#7DD3C0']}
+                  style={styles.buttonGradient}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.buttonText}>Create Account</Text>
                   )}
-                </div>
-              </div>
+                </LinearGradient>
+              </TouchableOpacity>
 
-              <Button
-                type="submit"
-                className="w-full h-12 rounded-xl bg-gradient-to-r from-primary to-auth-gradient-end hover:opacity-90 transition-all duration-300 transform hover:scale-[1.02]"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  'Create Account'
-                )}
-              </Button>
-            </form>
-
-            <div className="text-center pt-2">
-              <span className="text-sm text-muted-foreground">Already have an account? </span>
-              <Button
-                variant="link"
-                className="p-0 h-auto text-primary hover:text-primary/80 font-medium"
-                onClick={onLogin}
-              >
-                Sign In
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+              {/* Sign In Link */}
+              <View style={styles.signInContainer}>
+                <Text style={styles.signInText}>Already have an account? </Text>
+                <TouchableOpacity onPress={onLogin}>
+                  <Text style={styles.signInLink}>Sign In</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logoInner: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#4F8EF7',
+    borderRadius: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 24,
+    color: '#1F2937',
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
+    padding: 4,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+  },
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#4F8EF7',
+    borderRadius: 4,
+    marginRight: 12,
+    marginTop: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#4F8EF7',
+  },
+  checkmark: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  termsTextContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  termsText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  termsLink: {
+    fontSize: 14,
+    color: '#4F8EF7',
+    textDecorationLine: 'underline',
+  },
+  signUpButton: {
+    marginBottom: 24,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonGradient: {
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+  },
+  signInContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signInText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  signInLink: {
+    fontSize: 14,
+    color: '#4F8EF7',
+    fontWeight: '500',
+  },
+});

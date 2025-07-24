@@ -1,8 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { ArrowLeft, Shield } from 'lucide-react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator
+} from 'react-native';
+import { ArrowLeft, Shield } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface OtpVerificationFormProps {
   contact: string;
@@ -21,7 +31,7 @@ export const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
   const [canResend, setCanResend] = useState(false);
   const [error, setError] = useState('');
   
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
     // Start countdown timer
@@ -52,19 +62,9 @@ export const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+  const handleKeyPress = (key: string, index: number) => {
+    if (key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text/plain').replace(/\D/g, '');
-    if (pastedData.length === 6) {
-      const newOtp = pastedData.split('');
-      setOtp(newOtp);
-      inputRefs.current[5]?.focus();
     }
   };
 
@@ -123,98 +123,257 @@ export const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-auth-gradient-start to-auth-gradient-end p-4 flex items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 animate-fade-in">
-        {/* Back button */}
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="text-white hover:bg-white/10 p-2 rounded-xl"
+    <LinearGradient
+      colors={['#4F8EF7', '#7DD3C0']}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
         >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Back
-        </Button>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            {/* Back Button */}
+            <TouchableOpacity style={styles.backButton} onPress={onBack}>
+              <ArrowLeft size={20} color="white" />
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
 
-        {/* Logo placeholder */}
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 mx-auto bg-white rounded-2xl flex items-center justify-center shadow-lg">
-            <Shield className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">Verify Code</h1>
-          <p className="text-white/80">
-            We sent a code to {formatContact(contact)}
-          </p>
-        </div>
+            {/* Logo */}
+            <View style={styles.logoContainer}>
+              <View style={styles.logo}>
+                <Shield size={32} color="#4F8EF7" />
+              </View>
+              <Text style={styles.title}>Verify Code</Text>
+              <Text style={styles.subtitle}>
+                We sent a code to {formatContact(contact)}
+              </Text>
+            </View>
 
-        <Card className="border-0 shadow-xl bg-auth-surface backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <h2 className="text-xl font-semibold text-center">Enter Verification Code</h2>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex justify-center space-x-2" onPaste={handlePaste}>
+            {/* Form Card */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Enter Verification Code</Text>
+              
+              {/* OTP Input */}
+              <View style={styles.otpContainer}>
                 {otp.map((digit, index) => (
-                  <Input
+                  <TextInput
                     key={index}
                     ref={el => inputRefs.current[index] = el}
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={1}
+                    style={styles.otpInput}
                     value={digit}
-                    onChange={(e) => handleOtpChange(e.target.value, index)}
-                    onKeyDown={(e) => handleKeyDown(e, index)}
-                    className="w-12 h-14 text-center text-lg font-semibold rounded-xl border-2 focus:border-primary transition-all duration-300"
+                    onChangeText={(value) => handleOtpChange(value, index)}
+                    onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
+                    keyboardType="numeric"
+                    maxLength={1}
                     placeholder="0"
+                    placeholderTextColor="#9CA3AF"
+                    textAlign="center"
                   />
                 ))}
-              </div>
+              </View>
 
               {error && (
-                <p className="text-sm text-destructive text-center">{error}</p>
+                <Text style={styles.errorText}>{error}</Text>
               )}
 
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Didn't receive the code?
-                </p>
+              {/* Resend Section */}
+              <View style={styles.resendContainer}>
+                <Text style={styles.resendText}>Didn't receive the code?</Text>
                 {canResend ? (
-                  <Button
-                    variant="link"
-                    onClick={handleResend}
-                    className="p-0 h-auto text-primary hover:text-primary/80 font-medium"
-                  >
-                    Resend Code
-                  </Button>
+                  <TouchableOpacity onPress={handleResend}>
+                    <Text style={styles.resendLink}>Resend Code</Text>
+                  </TouchableOpacity>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Resend in {Math.floor(resendTimer / 60)}:{(resendTimer % 60).toString().padStart(2, '0')}
-                  </p>
+                  <Text style={styles.timerText}>
+                    Resend in {formatTime(resendTimer)}
+                  </Text>
                 )}
-              </div>
-            </div>
+              </View>
 
-            <Button
-              onClick={handleVerify}
-              className="w-full h-12 rounded-xl bg-gradient-to-r from-primary to-auth-gradient-end hover:opacity-90 transition-all duration-300 transform hover:scale-[1.02]"
-              disabled={isLoading || otp.join('').length !== 6}
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                'Verify Code'
-              )}
-            </Button>
+              {/* Verify Button */}
+              <TouchableOpacity
+                style={[styles.verifyButton, (isLoading || otp.join('').length !== 6) && styles.buttonDisabled]}
+                onPress={handleVerify}
+                disabled={isLoading || otp.join('').length !== 6}
+              >
+                <LinearGradient
+                  colors={isLoading || otp.join('').length !== 6 ? ['#9CA3AF', '#9CA3AF'] : ['#4F8EF7', '#7DD3C0']}
+                  style={styles.buttonGradient}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.buttonText}>Verify Code</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
 
-            <div className="bg-auth-accent-lavender/20 p-4 rounded-xl border border-auth-accent-lavender/30">
-              <p className="text-xs text-center text-foreground/70">
-                For demo purposes, use code: <span className="font-mono font-semibold">123456</span>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+              {/* Demo Info */}
+              <View style={styles.demoBox}>
+                <Text style={styles.demoText}>
+                  For demo purposes, use code: <Text style={styles.demoCode}>123456</Text>
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 32,
+    padding: 8,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 24,
+    color: '#1F2937',
+  },
+  otpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  otpInput: {
+    width: 48,
+    height: 56,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    backgroundColor: '#F9FAFB',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  resendContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  resendText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  resendLink: {
+    fontSize: 14,
+    color: '#4F8EF7',
+    fontWeight: '500',
+  },
+  timerText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  verifyButton: {
+    marginBottom: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonGradient: {
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+  },
+  demoBox: {
+    backgroundColor: 'rgba(147, 51, 234, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(147, 51, 234, 0.3)',
+    borderRadius: 12,
+    padding: 16,
+  },
+  demoText: {
+    fontSize: 12,
+    color: '#374151',
+    textAlign: 'center',
+  },
+  demoCode: {
+    fontFamily: 'monospace',
+    fontWeight: '600',
+  },
+});

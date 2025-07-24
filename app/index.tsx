@@ -1,7 +1,5 @@
 import { AuthFlow } from '@/components/auth/AuthFlow';
 
-const Index = () => {
+export default function Index() {
   return <AuthFlow />;
-};
-
-export default Index;
+}

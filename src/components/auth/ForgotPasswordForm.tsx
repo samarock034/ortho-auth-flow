@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator
+} from 'react-native';
+import { useForm, Controller } from 'react-hook-form';
+import { Mail, ArrowLeft, CheckCircle } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface ForgotPasswordFormData {
   emailOrPhone: string;
@@ -19,7 +28,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack, 
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   
-  const { register, handleSubmit, formState: { errors }, getValues } = useForm<ForgotPasswordFormData>();
+  const { control, handleSubmit, getValues, formState: { errors } } = useForm<ForgotPasswordFormData>();
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
@@ -40,106 +49,303 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack, 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-auth-gradient-start to-auth-gradient-end p-4 flex items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 animate-fade-in">
-        {/* Back button */}
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="text-white hover:bg-white/10 p-2 rounded-xl"
+    <LinearGradient
+      colors={['#4F8EF7', '#7DD3C0']}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
         >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Back to Sign In
-        </Button>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            {/* Back Button */}
+            <TouchableOpacity style={styles.backButton} onPress={onBack}>
+              <ArrowLeft size={20} color="white" />
+              <Text style={styles.backButtonText}>Back to Sign In</Text>
+            </TouchableOpacity>
 
-        {/* Logo placeholder */}
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 mx-auto bg-white rounded-2xl flex items-center justify-center shadow-lg">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <div className="w-4 h-4 bg-white rounded-full"></div>
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-white">Forgot Password?</h1>
-          <p className="text-white/80">No worries, we'll help you reset it</p>
-        </div>
+            {/* Logo */}
+            <View style={styles.logoContainer}>
+              <View style={styles.logo}>
+                <View style={styles.logoInner} />
+              </View>
+              <Text style={styles.title}>Forgot Password?</Text>
+              <Text style={styles.subtitle}>No worries, we'll help you reset it</Text>
+            </View>
 
-        <Card className="border-0 shadow-xl bg-auth-surface backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <h2 className="text-xl font-semibold text-center">Reset Password</h2>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {!isSubmitted ? (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="emailOrPhone" className="text-sm font-medium">
-                    Email or Phone Number
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="emailOrPhone"
-                      type="text"
-                      placeholder="Enter your email or phone"
-                      className="pl-10 h-12 rounded-xl border-2 focus:border-primary transition-all duration-300"
-                      {...register('emailOrPhone', { 
-                        required: 'Email or phone is required',
-                        pattern: {
-                          value: /^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|[\+]?[1-9][\d]{10,14})$/,
-                          message: 'Enter a valid email or phone number'
-                        }
-                      })}
-                    />
-                    <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                  </div>
-                  {errors.emailOrPhone && (
-                    <p className="text-sm text-destructive">{errors.emailOrPhone.message}</p>
-                  )}
-                </div>
+            {/* Form Card */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Reset Password</Text>
+              
+              {!isSubmitted ? (
+                <>
+                  {/* Email/Phone Input */}
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Email or Phone Number</Text>
+                    <View style={styles.inputWrapper}>
+                      <Mail size={20} color="#6B7280" style={styles.inputIcon} />
+                      <Controller
+                        control={control}
+                        name="emailOrPhone"
+                        rules={{
+                          required: 'Email or phone is required',
+                          pattern: {
+                            value: /^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|[\+]?[1-9][\d]{10,14})$/,
+                            message: 'Enter a valid email or phone number'
+                          }
+                        }}
+                        render={({ field: { onChange, onBlur, value } }) => (
+                          <TextInput
+                            style={styles.textInput}
+                            placeholder="Enter your email or phone"
+                            placeholderTextColor="#9CA3AF"
+                            onBlur={onBlur}
+                            onChangeText={onChange}
+                            value={value}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                          />
+                        )}
+                      />
+                    </View>
+                    {errors.emailOrPhone && (
+                      <Text style={styles.errorText}>{errors.emailOrPhone.message}</Text>
+                    )}
+                  </View>
 
-                <div className="bg-auth-accent-mint/20 p-4 rounded-xl border border-auth-accent-mint/30">
-                  <p className="text-sm text-foreground/80">
-                    We'll send you a verification code to reset your password. 
-                    Make sure the contact information is correct.
-                  </p>
-                </div>
+                  {/* Info Box */}
+                  <View style={styles.infoBox}>
+                    <Text style={styles.infoText}>
+                      We'll send you a verification code to reset your password. 
+                      Make sure the contact information is correct.
+                    </Text>
+                  </View>
 
-                <Button
-                  type="submit"
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-primary to-auth-gradient-end hover:opacity-90 transition-all duration-300 transform hover:scale-[1.02]"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    'Send Verification Code'
-                  )}
-                </Button>
-              </form>
-            ) : (
-              <div className="text-center space-y-4 py-4">
-                <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Code Sent!</h3>
-                  <p className="text-sm text-muted-foreground">
+                  {/* Send Code Button */}
+                  <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={handleSubmit(onSubmit)}
+                    disabled={isLoading}
+                  >
+                    <LinearGradient
+                      colors={['#4F8EF7', '#7DD3C0']}
+                      style={styles.buttonGradient}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator color="white" />
+                      ) : (
+                        <Text style={styles.buttonText}>Send Verification Code</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View style={styles.successContainer}>
+                  <View style={styles.successIcon}>
+                    <CheckCircle size={32} color="#10B981" />
+                  </View>
+                  <Text style={styles.successTitle}>Code Sent!</Text>
+                  <Text style={styles.successText}>
                     We've sent a verification code to
-                  </p>
-                  <p className="text-sm font-medium text-primary">
+                  </Text>
+                  <Text style={styles.contactText}>
                     {getValues('emailOrPhone')}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={handleTryAgain}
-                  className="w-full h-12 rounded-xl border-2"
-                >
-                  Send to Different Contact
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.tryAgainButton}
+                    onPress={handleTryAgain}
+                  >
+                    <Text style={styles.tryAgainText}>Send to Different Contact</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 32,
+    padding: 8,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logoInner: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#4F8EF7',
+    borderRadius: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 24,
+    color: '#1F2937',
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+  },
+  infoBox: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+  },
+  sendButton: {
+    marginBottom: 16,
+  },
+  buttonGradient: {
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+  },
+  successContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  successIcon: {
+    width: 64,
+    height: 64,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  successText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  contactText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4F8EF7',
+    marginBottom: 24,
+  },
+  tryAgainButton: {
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  tryAgainText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
+});
